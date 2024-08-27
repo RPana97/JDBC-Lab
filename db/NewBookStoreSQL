@@ -1,0 +1,160 @@
+-- Drop the 'Books' table if it exists
+DROP TABLE IF EXISTS Books;
+
+-- Drop the 'Sales' table if it exists
+DROP TABLE IF EXISTS Sales;
+
+-- Create the 'Books' table
+CREATE TABLE Books (
+    BookID INTEGER PRIMARY KEY,
+    Title TEXT(255),
+    Author TEXT(255),
+    PublicationYear INT, 
+    Price REAL
+);
+
+-- Insert records into the 'Books' table
+INSERT INTO Books (BookID, Title, Author, PublicationYear, Price) 
+VALUES 
+(1, 'The Lord of the Rings', 'J.R.R. Tolkien', 1954, 20.99),
+(2, 'Dune', 'Frank Herbert', 1965, 15.99),
+(3, 'Jurassic Park', 'Michael Crichton', 1990, 12.99),
+(4, 'Atomic Habits', 'James Clear', 2018, 18.99),
+(5, 'How to Win Friends and Influence People', 'Dale Carnegie', 1936, 10.99),
+(6, 'Simply Mopert', 'Nick Mopert', 2001, 1000000.99);
+
+-- Select all records from the 'Books' table
+SELECT * FROM Books;
+
+-- Select records from 'Books' where the PublicationYear is greater than 2000
+SELECT * FROM Books WHERE PublicationYear > 2000;
+
+-- Select records from 'Books' where the Author is 'J.R.R. Tolkien'
+SELECT * FROM Books WHERE Author = 'J.R.R. Tolkien';
+
+-- Update the price of 'Dune' to 17.99
+UPDATE Books SET Price = 17.99 WHERE Title = 'Dune';
+
+-- Delete the book 'How to Win Friends and Influence People'
+DELETE FROM Books WHERE Title = 'How to Win Friends and Influence People';
+
+-- Select all records from the 'Books' table after deletion
+SELECT * FROM Books;
+
+-- Create the 'Sales' table
+CREATE TABLE Sales (
+    SaleID INTEGER PRIMARY KEY AUTOINCREMENT,
+    BookID INTEGER,
+    SaleDate DATE,
+    Quantity INTEGER,
+    TotalPrice REAL,
+    FOREIGN KEY (BookID) REFERENCES Books(BookID)
+);
+
+-- Insert records into the 'Sales' table
+INSERT INTO Sales (BookID, SaleDate, Quantity, TotalPrice) 
+VALUES 
+(1, '2024-08-20', 2, 41.98),
+(2, '2024-08-21', 1, 15.99),
+(3, '2024-08-22', 3, 38.97),
+(4, '2024-08-23', 1, 18.99),
+(5, '2024-08-24', 4, 43.96),
+(1, '2024-08-25', 1, 20.99),
+(2, '2024-08-26', 2, 31.98),
+(3, '2024-08-27', 1, 12.99),
+(4, '2024-08-28', 2, 37.98),
+(5, '2024-08-29', 3, 32.97);
+
+-- Select all books that have been sold
+SELECT DISTINCT Books.*
+FROM Books
+JOIN Sales ON Books.BookID = Sales.BookID;
+
+-- Find the total sales (sum of TotalPrice) for each book
+SELECT Books.Title, SUM(Sales.TotalPrice) AS TotalSales
+FROM Books
+JOIN Sales ON Books.BookID = Sales.BookID
+GROUP BY Books.Title;
+
+-- Select all books that have never been sold
+SELECT * 
+FROM Books
+WHERE BookID NOT IN (SELECT DISTINCT BookID FROM Sales);
+
+-- Find the book with the highest total sales
+SELECT Books.Title, SUM(Sales.TotalPrice) AS TotalSales
+FROM Books
+JOIN Sales ON Books.BookID = Sales.BookID
+GROUP BY Books.Title
+ORDER BY TotalSales DESC
+LIMIT 1;
+
+-- Find the total sales of books for each author
+SELECT Books.Author, SUM(Sales.TotalPrice) AS TotalSales
+FROM Books
+JOIN Sales ON Books.BookID = Sales.BookID
+GROUP BY Books.Author;
+
+-- Update the quantity of a sale record
+UPDATE Sales
+SET Quantity = 5, TotalPrice = 5 * (SELECT Price FROM Books WHERE BookID = 1)
+WHERE SaleID = 1;
+
+-- Delete a sale record
+DELETE FROM Sales WHERE SaleID = 2;
+
+-- Update the price of a book based on its sales performance
+UPDATE Books
+SET Price = Price * 0.9
+WHERE BookID IN (
+    SELECT BookID
+    FROM Sales
+    GROUP BY BookID
+    HAVING SUM(TotalPrice) < 50
+);
+
+--Retrieve books that are higher price than average of all books.
+SELECT *
+FROM Books
+WHERE Price > (SELECT AVG(Price) FROM Books);
+
+--Find BookID of books with highest totalprice in sales table
+SELECT BookID
+FROM Sales
+GROUP BY BookID
+ORDER BY SUM(TotalPrice) DESC
+LIMIT 1;
+
+--find the total number of books sold
+SELECT SUM(Quantity) AS TotalBooksSold
+FROM Sales;
+
+--calculate total revenue from books sales
+SELECT SUM(TotalPrice) AS TotalRevenue
+FROM Sales;
+
+--find average, min, and max book price
+SELECT AVG(Price) AS AveragePrice,
+       MIN(Price) AS MinimumPrice,
+       MAX(Price) AS MaximumPrice
+FROM Books;
+
+--group by Author and count number of books per author
+SELECT Author, COUNT(*) AS NumberOfBooks
+FROM Books
+GROUP BY Author;
+
+--Inner join to retrieve all records of books and their price
+SELECT Books.*, Sales.*
+FROM Books
+INNER JOIN Sales ON Books.BookID = Sales.BookID;
+
+--Left join retrieves all books and display sales records
+SELECT Books.*, Sales.*
+FROM Books
+LEFT JOIN Sales ON Books.BookID = Sales.BookID;
+
+--Right join retrieves all sales and displays book info
+SELECT Books.*, Sales.*
+FROM Sales
+LEFT JOIN Books ON Sales.BookID = Books.BookID;
